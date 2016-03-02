@@ -1,0 +1,49 @@
+From a826694d7453f2f9097d920116392718e1a33076 Mon Sep 17 00:00:00 2001
+From: Donavan Lance <tusklahoma@gmail.com>
+Date: Mon, 16 May 2016 19:25:04 +0900
+Subject: [PATCH 4/4] [PATCH] Microsoft Surface Pro 4 / Surface Book camera
+ support
+
+Signed-off-by: Donavan Lance <tusklahoma@gmail.com>
+---
+ drivers/media/usb/uvc/uvc_driver.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/drivers/media/usb/uvc/uvc_driver.c b/drivers/media/usb/uvc/uvc_driver.c
+index 451e84e9..a645bff 100644
+--- a/drivers/media/usb/uvc/uvc_driver.c
++++ b/drivers/media/usb/uvc/uvc_driver.c
+@@ -2170,6 +2170,30 @@ static struct usb_device_id uvc_ids[] = {
+ 	  .bInterfaceSubClass	= 1,
+ 	  .bInterfaceProtocol	= 0,
+ 	  .driver_info		= UVC_QUIRK_PROBE_MINMAX },
++	/* Microsoft Surface Pro 4 */
++	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
++				| USB_DEVICE_ID_MATCH_INT_INFO,
++	  .idVendor		= 0x045e,
++	  .idProduct		= 0x090c,
++	  .bInterfaceClass	= USB_CLASS_VIDEO,
++	  .bInterfaceSubClass	= 1,
++	  .bInterfaceProtocol	= 1 },
++	/* Microsoft Surface Book Front */
++	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
++				| USB_DEVICE_ID_MATCH_INT_INFO,
++	  .idVendor		= 0x045e,
++	  .idProduct		= 0x090b,
++	  .bInterfaceClass	= USB_CLASS_VIDEO,
++	  .bInterfaceSubClass	= 1,
++	  .bInterfaceProtocol	= 1 },
++	/* Microsoft Surface Book Rear */
++	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
++				| USB_DEVICE_ID_MATCH_INT_INFO,
++	  .idVendor		= 0x045e,
++	  .idProduct		= 0x091a,
++	  .bInterfaceClass	= USB_CLASS_VIDEO,
++	  .bInterfaceSubClass	= 1,
++	  .bInterfaceProtocol	= 1 },
+ 	/* Logitech Quickcam Fusion */
+ 	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
+ 				| USB_DEVICE_ID_MATCH_INT_INFO,
+-- 
+2.5.5
+

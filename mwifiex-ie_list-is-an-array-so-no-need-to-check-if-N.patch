@@ -1,0 +1,36 @@
+From 001351881da1822b06e5d92e1fa2bf4920318e8c Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Mon, 28 Mar 2016 16:53:33 +0100
+Subject: [PATCH 03/25] mwifiex: ie_list is an array, so no need to check if
+ NULL
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ap_ie->ie_list is an array of struct mwifiex_ie and can never
+be null, so the null check on this array is redundant and can
+be removed.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/uap_cmd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/uap_cmd.c b/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
+index 16d95b2..92ce32f 100644
+--- a/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
++++ b/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
+@@ -694,7 +694,7 @@ static int mwifiex_uap_custom_ie_prepare(u8 *tlv, void *cmd_buf, u16 *ie_size)
+ 	struct mwifiex_ie_list *ap_ie = cmd_buf;
+ 	struct mwifiex_ie_types_header *tlv_ie = (void *)tlv;
+ 
+-	if (!ap_ie || !ap_ie->len || !ap_ie->ie_list)
++	if (!ap_ie || !ap_ie->len)
+ 		return -1;
+ 
+ 	*ie_size += le16_to_cpu(ap_ie->len) +
+-- 
+2.7.3
+

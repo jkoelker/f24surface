@@ -1,0 +1,71 @@
+From 948ad6b34943a1247653392d59bcfc9896da8fe7 Mon Sep 17 00:00:00 2001
+From: Andreas Fenkart <afenkart@gmail.com>
+Date: Thu, 10 Mar 2016 09:44:09 +0100
+Subject: [PATCH 23/25] mwifiex: scan: replace pointer arithmetic with array
+ access
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+improves readability
+
+Reviewed-by: Julian Calaby <julian.calaby@gmail.com>
+Signed-off-by: Andreas Fenkart <afenkart@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/scan.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/scan.c b/drivers/net/wireless/marvell/mwifiex/scan.c
+index 11d5718..753d92a 100644
+--- a/drivers/net/wireless/marvell/mwifiex/scan.c
++++ b/drivers/net/wireless/marvell/mwifiex/scan.c
+@@ -1055,27 +1055,24 @@ mwifiex_config_scan(struct mwifiex_private *priv,
+ 		     chan_idx++) {
+ 
+ 			channel = user_scan_in->chan_list[chan_idx].chan_number;
+-			(scan_chan_list + chan_idx)->chan_number = channel;
++			scan_chan_list[chan_idx].chan_number = channel;
+ 
+ 			radio_type =
+ 				user_scan_in->chan_list[chan_idx].radio_type;
+-			(scan_chan_list + chan_idx)->radio_type = radio_type;
++			scan_chan_list[chan_idx].radio_type = radio_type;
+ 
+ 			scan_type = user_scan_in->chan_list[chan_idx].scan_type;
+ 
+ 			if (scan_type == MWIFIEX_SCAN_TYPE_PASSIVE)
+-				(scan_chan_list +
+-				 chan_idx)->chan_scan_mode_bitmap
++				scan_chan_list[chan_idx].chan_scan_mode_bitmap
+ 					|= (MWIFIEX_PASSIVE_SCAN |
+ 					    MWIFIEX_HIDDEN_SSID_REPORT);
+ 			else
+-				(scan_chan_list +
+-				 chan_idx)->chan_scan_mode_bitmap
++				scan_chan_list[chan_idx].chan_scan_mode_bitmap
+ 					&= ~MWIFIEX_PASSIVE_SCAN;
+ 
+ 			if (*filtered_scan)
+-				(scan_chan_list +
+-				 chan_idx)->chan_scan_mode_bitmap
++				scan_chan_list[chan_idx].chan_scan_mode_bitmap
+ 					|= MWIFIEX_DISABLE_CHAN_FILT;
+ 
+ 			if (user_scan_in->chan_list[chan_idx].scan_time) {
+@@ -1090,9 +1087,9 @@ mwifiex_config_scan(struct mwifiex_private *priv,
+ 					scan_dur = adapter->active_scan_time;
+ 			}
+ 
+-			(scan_chan_list + chan_idx)->min_scan_time =
++			scan_chan_list[chan_idx].min_scan_time =
+ 				cpu_to_le16(scan_dur);
+-			(scan_chan_list + chan_idx)->max_scan_time =
++			scan_chan_list[chan_idx].max_scan_time =
+ 				cpu_to_le16(scan_dur);
+ 		}
+ 
+-- 
+2.7.3
+

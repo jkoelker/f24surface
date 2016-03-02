@@ -1,0 +1,87 @@
+From e87650bce9a5499f133341db99c9293bfb8a0282 Mon Sep 17 00:00:00 2001
+From: Shengzhen Li <szli@marvell.com>
+Date: Mon, 11 Apr 2016 07:52:38 -0700
+Subject: [PATCH 14/25] mwifiex: add pcie usb/uart firmware download support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch adds support for downloading usb/uart firmware for
+8997 chipset by reading the chip version.
+
+Signed-off-by: Shengzhen Li <szli@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 17 +++++++++++++++--
+ drivers/net/wireless/marvell/mwifiex/pcie.h |  7 +++++--
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index c28edbb..1d888b5 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2811,6 +2811,7 @@ static int mwifiex_pcie_request_irq(struct mwifiex_adapter *adapter)
+ static void mwifiex_pcie_get_fw_name(struct mwifiex_adapter *adapter)
+ {
+ 	int revision_id = 0;
++	int version;
+ 	struct pcie_service_card *card = adapter->card;
+ 
+ 	switch (card->dev->device) {
+@@ -2834,12 +2835,24 @@ static void mwifiex_pcie_get_fw_name(struct mwifiex_adapter *adapter)
+ 		break;
+ 	case PCIE_DEVICE_ID_MARVELL_88W8997:
+ 		mwifiex_read_reg(adapter, 0x0c48, &revision_id);
++		mwifiex_read_reg(adapter, 0x0cd0, &version);
++		version &= 0x7;
+ 		switch (revision_id) {
+ 		case PCIE8997_V2:
+-			strcpy(adapter->fw_name, PCIE8997_FW_NAME_V2);
++			if (version == CHIP_VER_PCIEUSB)
++				strcpy(adapter->fw_name,
++				       PCIEUSB8997_FW_NAME_V2);
++			else
++				strcpy(adapter->fw_name,
++				       PCIEUART8997_FW_NAME_V2);
+ 			break;
+ 		case PCIE8997_Z:
+-			strcpy(adapter->fw_name, PCIE8997_FW_NAME_Z);
++			if (version == CHIP_VER_PCIEUSB)
++				strcpy(adapter->fw_name,
++				       PCIEUSB8997_FW_NAME_Z);
++			else
++				strcpy(adapter->fw_name,
++				       PCIEUART8997_FW_NAME_Z);
+ 			break;
+ 		default:
+ 			break;
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.h b/drivers/net/wireless/marvell/mwifiex/pcie.h
+index cc7a5df..bbabfb0 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.h
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.h
+@@ -32,8 +32,10 @@
+ #define PCIE8766_DEFAULT_FW_NAME "mrvl/pcie8766_uapsta.bin"
+ #define PCIE8897_A0_FW_NAME "mrvl/pcie8897_uapsta_a0.bin"
+ #define PCIE8897_B0_FW_NAME "mrvl/pcie8897_uapsta.bin"
+-#define PCIE8997_FW_NAME_Z "mrvl/pcieusb8997_combo.bin"
+-#define PCIE8997_FW_NAME_V2 "mrvl/pcieusb8997_combo_v2.bin"
++#define PCIEUART8997_FW_NAME_Z "mrvl/pcieuart8997_combo.bin"
++#define PCIEUART8997_FW_NAME_V2 "mrvl/pcieuart8997_combo_v2.bin"
++#define PCIEUSB8997_FW_NAME_Z "mrvl/pcieusb8997_combo.bin"
++#define PCIEUSB8997_FW_NAME_V2 "mrvl/pcieusb8997_combo_v2.bin"
+ 
+ #define PCIE_VENDOR_ID_MARVELL              (0x11ab)
+ #define PCIE_VENDOR_ID_V2_MARVELL           (0x1b4b)
+@@ -45,6 +47,7 @@
+ #define PCIE8897_B0	0x1200
+ #define PCIE8997_Z	0x0
+ #define PCIE8997_V2	0x471
++#define CHIP_VER_PCIEUSB	0x2
+ 
+ /* Constants for Buffer Descriptor (BD) rings */
+ #define MWIFIEX_MAX_TXRX_BD			0x20
+-- 
+2.7.3
+

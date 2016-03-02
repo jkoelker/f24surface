@@ -1,0 +1,36 @@
+From a5c92f0b6a88a8abe3840869425f1372591a762c Mon Sep 17 00:00:00 2001
+From: Wei-Ning Huang <wnhuang@chromium.org>
+Date: Wed, 30 Mar 2016 18:14:55 +0800
+Subject: [PATCH 04/25] mwifiex: fix NULL pointer dereference error
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In mwifiex_enable_hs, we need to check if
+priv->wdev.wiphy->wowlan_config is NULL before accessing its member.
+This sometimes cause kernel panic when suspend/resume.
+
+Signed-off-by: Wei-Ning Huang <wnhuang@chromium.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/sta_ioctl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/sta_ioctl.c b/drivers/net/wireless/marvell/mwifiex/sta_ioctl.c
+index d5c56eb..d8de432 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sta_ioctl.c
++++ b/drivers/net/wireless/marvell/mwifiex/sta_ioctl.c
+@@ -509,7 +509,8 @@ int mwifiex_enable_hs(struct mwifiex_adapter *adapter)
+ 
+ 	if (priv && priv->sched_scanning) {
+ #ifdef CONFIG_PM
+-		if (!priv->wdev.wiphy->wowlan_config->nd_config) {
++		if (priv->wdev.wiphy->wowlan_config &&
++		    !priv->wdev.wiphy->wowlan_config->nd_config) {
+ #endif
+ 			mwifiex_dbg(adapter, CMD, "aborting bgscan!\n");
+ 			mwifiex_stop_bg_scan(priv);
+-- 
+2.7.3
+

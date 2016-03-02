@@ -1,0 +1,137 @@
+From 85abfb1239ecda32222c161670667c7b2f6832be Mon Sep 17 00:00:00 2001
+From: Andreas Fenkart <afenkart@gmail.com>
+Date: Thu, 10 Mar 2016 09:44:11 +0100
+Subject: [PATCH 25/25] mwifiex: make mwifiex_insert_cmd_to_free_q local static
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+after factoring out mwifiex_cancel_pending_scan_cmd
+the function is not called outside of cmdevt file
+moved function to head of file to avoid forward declaration,
+also moved mwifiex_recycle_cmd_node since they are very similar
+
+Signed-off-by: Andreas Fenkart <afenkart@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/cmdevt.c | 82 +++++++++++++--------------
+ drivers/net/wireless/marvell/mwifiex/main.h   |  2 -
+ 2 files changed, 41 insertions(+), 43 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/cmdevt.c b/drivers/net/wireless/marvell/mwifiex/cmdevt.c
+index f5af525..6bc2011 100644
+--- a/drivers/net/wireless/marvell/mwifiex/cmdevt.c
++++ b/drivers/net/wireless/marvell/mwifiex/cmdevt.c
+@@ -105,6 +105,47 @@ mwifiex_clean_cmd_node(struct mwifiex_adapter *adapter,
+ }
+ 
+ /*
++ * This function returns a command to the command free queue.
++ *
++ * The function also calls the completion callback if required, before
++ * cleaning the command node and re-inserting it into the free queue.
++ */
++static void
++mwifiex_insert_cmd_to_free_q(struct mwifiex_adapter *adapter,
++			     struct cmd_ctrl_node *cmd_node)
++{
++	unsigned long flags;
++
++	if (!cmd_node)
++		return;
++
++	if (cmd_node->wait_q_enabled)
++		mwifiex_complete_cmd(adapter, cmd_node);
++	/* Clean the node */
++	mwifiex_clean_cmd_node(adapter, cmd_node);
++
++	/* Insert node into cmd_free_q */
++	spin_lock_irqsave(&adapter->cmd_free_q_lock, flags);
++	list_add_tail(&cmd_node->list, &adapter->cmd_free_q);
++	spin_unlock_irqrestore(&adapter->cmd_free_q_lock, flags);
++}
++
++/* This function reuses a command node. */
++void mwifiex_recycle_cmd_node(struct mwifiex_adapter *adapter,
++			      struct cmd_ctrl_node *cmd_node)
++{
++	struct host_cmd_ds_command *host_cmd = (void *)cmd_node->cmd_skb->data;
++
++	mwifiex_insert_cmd_to_free_q(adapter, cmd_node);
++
++	atomic_dec(&adapter->cmd_pending);
++	mwifiex_dbg(adapter, CMD,
++		    "cmd: FREE_CMD: cmd=%#x, cmd_pending=%d\n",
++		le16_to_cpu(host_cmd->command),
++		atomic_read(&adapter->cmd_pending));
++}
++
++/*
+  * This function sends a host command to the firmware.
+  *
+  * The function copies the host command into the driver command
+@@ -614,47 +655,6 @@ int mwifiex_send_cmd(struct mwifiex_private *priv, u16 cmd_no,
+ }
+ 
+ /*
+- * This function returns a command to the command free queue.
+- *
+- * The function also calls the completion callback if required, before
+- * cleaning the command node and re-inserting it into the free queue.
+- */
+-void
+-mwifiex_insert_cmd_to_free_q(struct mwifiex_adapter *adapter,
+-			     struct cmd_ctrl_node *cmd_node)
+-{
+-	unsigned long flags;
+-
+-	if (!cmd_node)
+-		return;
+-
+-	if (cmd_node->wait_q_enabled)
+-		mwifiex_complete_cmd(adapter, cmd_node);
+-	/* Clean the node */
+-	mwifiex_clean_cmd_node(adapter, cmd_node);
+-
+-	/* Insert node into cmd_free_q */
+-	spin_lock_irqsave(&adapter->cmd_free_q_lock, flags);
+-	list_add_tail(&cmd_node->list, &adapter->cmd_free_q);
+-	spin_unlock_irqrestore(&adapter->cmd_free_q_lock, flags);
+-}
+-
+-/* This function reuses a command node. */
+-void mwifiex_recycle_cmd_node(struct mwifiex_adapter *adapter,
+-			      struct cmd_ctrl_node *cmd_node)
+-{
+-	struct host_cmd_ds_command *host_cmd = (void *)cmd_node->cmd_skb->data;
+-
+-	mwifiex_insert_cmd_to_free_q(adapter, cmd_node);
+-
+-	atomic_dec(&adapter->cmd_pending);
+-	mwifiex_dbg(adapter, CMD,
+-		    "cmd: FREE_CMD: cmd=%#x, cmd_pending=%d\n",
+-		le16_to_cpu(host_cmd->command),
+-		atomic_read(&adapter->cmd_pending));
+-}
+-
+-/*
+  * This function queues a command to the command pending queue.
+  *
+  * This in effect adds the command to the command list to be executed.
+diff --git a/drivers/net/wireless/marvell/mwifiex/main.h b/drivers/net/wireless/marvell/mwifiex/main.h
+index 6306654..63069dd 100644
+--- a/drivers/net/wireless/marvell/mwifiex/main.h
++++ b/drivers/net/wireless/marvell/mwifiex/main.h
+@@ -1044,8 +1044,6 @@ void mwifiex_cancel_all_pending_cmd(struct mwifiex_adapter *adapter);
+ void mwifiex_cancel_pending_ioctl(struct mwifiex_adapter *adapter);
+ void mwifiex_cancel_pending_scan_cmd(struct mwifiex_adapter *adapter);
+ 
+-void mwifiex_insert_cmd_to_free_q(struct mwifiex_adapter *adapter,
+-				  struct cmd_ctrl_node *cmd_node);
+ void mwifiex_recycle_cmd_node(struct mwifiex_adapter *adapter,
+ 			      struct cmd_ctrl_node *cmd_node);
+ 
+-- 
+2.7.3
+

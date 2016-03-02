@@ -1,0 +1,33 @@
+From c865a70098d9419d154f6d1ad97cd0150af968d1 Mon Sep 17 00:00:00 2001
+From: Amitkumar Karwar <akarwar@marvell.com>
+Date: Mon, 11 Apr 2016 07:52:37 -0700
+Subject: [PATCH 13/25] mwifiex: missing break statement
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch adds missing break statement at the end of
+PCIE_DEVICE_ID_MARVELL_88W8897 switch section.
+
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index edf8b07..c28edbb 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2831,6 +2831,7 @@ static void mwifiex_pcie_get_fw_name(struct mwifiex_adapter *adapter)
+ 		default:
+ 			break;
+ 		}
++		break;
+ 	case PCIE_DEVICE_ID_MARVELL_88W8997:
+ 		mwifiex_read_reg(adapter, 0x0c48, &revision_id);
+ 		switch (revision_id) {
+-- 
+2.7.3
+

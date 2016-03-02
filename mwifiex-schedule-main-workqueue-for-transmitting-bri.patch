@@ -1,0 +1,39 @@
+From ad5ca845e3d194703be82ad4a2f3042f2e198e2b Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 5 Apr 2016 01:04:38 -0700
+Subject: [PATCH 09/25] mwifiex: schedule main workqueue for transmitting
+ bridge packets
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bridge packets are enqueued to wmm tx queue, but will not be sent
+until main workqeue is scheduled for new interrupt or other
+reason. This adds unnecessary delay during traffic.
+
+We will schedule main workqueue when bridge packet is queued.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/uap_txrx.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/uap_txrx.c b/drivers/net/wireless/marvell/mwifiex/uap_txrx.c
+index 52f7981..ee7fe58 100644
+--- a/drivers/net/wireless/marvell/mwifiex/uap_txrx.c
++++ b/drivers/net/wireless/marvell/mwifiex/uap_txrx.c
+@@ -212,6 +212,8 @@ static void mwifiex_uap_queue_bridged_pkt(struct mwifiex_private *priv,
+ 	atomic_inc(&adapter->tx_pending);
+ 	atomic_inc(&adapter->pending_bridged_pkts);
+ 
++	mwifiex_queue_main_work(priv->adapter);
++
+ 	return;
+ }
+ 
+-- 
+2.7.3
+

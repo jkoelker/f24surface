@@ -24,7 +24,7 @@ Summary: The Linux kernel
 %global zipsed -e 's/\.ko$/\.ko.xz/'
 %endif
 
-# define buildid .local
+%define buildid .surface
 
 # baserelease defines which build revision of this kernel version we're
 # building.  We used to call this fedora_build, but the magical name
@@ -623,6 +623,37 @@ Patch716: ALSA-timer-Fix-leak-in-events-via-snd_timer_user_tin.patch
 Patch717: KVM-MTRR-remove-MSR-0x2f8.patch
 
 # END OF PATCH DEFINITIONS
+
+# Surface Patches
+Patch8000: surface-cam.patch
+Patch8001: surface-touchpad.patch
+
+# Backport mwifiex changes from linux-next
+#Patch8100: mwifiex-fix-Tx-timeout-issue-during-suspend-test.patch
+#Patch8101: mwifiex-advertise-low-priority-scan-feature.patch
+#Patch8102: mwifiex-ie_list-is-an-array-so-no-need-to-check-if-N.patch
+#Patch8103: mwifiex-fix-NULL-pointer-dereference-error.patch
+#Patch8104: mwifiex-add-support-for-GTK-rekey-offload.patch
+#Patch8105: mwifiex-add-support-for-wakeup-on-GTK-rekey-failure.patch
+#Patch8106: mwifiex-check-revision-id-while-choosing-PCIe-firmwa.patch
+#Patch8107: mwifiex-remove-redundant-GFP_DMA-flag.patch
+#Patch8108: mwifiex-schedule-main-workqueue-for-transmitting-bri.patch
+#Patch8109: mwifiex-AMSDU-Rx-frame-handling-in-AP-mode.patch
+#Patch8110: mwifiex-dump-pcie-scratch-registers.patch
+#Patch8111: cfg80211-remove-enum-ieee80211_band.patch
+#Patch8112: mwifiex-missing-break-statement.patch
+#Patch8113: mwifiex-add-pcie-usb-uart-firmware-download-support.patch
+#Patch8114: mwifiex-add-default-setting-for-pcie-firmware-downlo.patch
+#Patch8115: mwifiex-do-not-wait-on-semaphore-during-card-removal.patch
+#Patch8116: mwifiex-fix-incorrect-ht-capability-problem.patch
+#Patch8117: mwifiex-fix-the-incorrect-WARN_ON-during-suspend.patch
+#Patch8118: mwifiex-scan-simplify-dereference-of-bss_desc-fields.patch
+#Patch8119: mwifiex-scan-factor-out-has_ieee_hdr-has_vendor_hdr.patch
+#Patch8120: mwifiex-scan-simplify-ternary-operators-using-gnu-ex.patch
+#Patch8121: mwifiex-scan-factor-out-dbg_security_flags.patch
+#Patch8122: mwifiex-scan-replace-pointer-arithmetic-with-array-a.patch
+#Patch8123: mwifiex-factor-out-mwifiex_cancel_pending_scan_cmd.patch
+#Patch8124: mwifiex-make-mwifiex_insert_cmd_to_free_q-local-stat.patch
 
 %endif
 

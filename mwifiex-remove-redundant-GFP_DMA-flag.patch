@@ -1,0 +1,48 @@
+From 00c5478049683b15599339e36cae7fffc1e62844 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 5 Apr 2016 01:04:37 -0700
+Subject: [PATCH 08/25] mwifiex: remove redundant GFP_DMA flag
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+skb forwarded to TCP/IP stack doesn't need to allocate in DMA ZONE.
+This patch removes GFP_DMA flag in this case to save precious DMA
+memory.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/sdio.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.c b/drivers/net/wireless/marvell/mwifiex/sdio.c
+index b2c839a..a0aec3e 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sdio.c
++++ b/drivers/net/wireless/marvell/mwifiex/sdio.c
+@@ -1123,8 +1123,8 @@ static void mwifiex_deaggr_sdio_pkt(struct mwifiex_adapter *adapter,
+ 				    __func__, pkt_len, blk_size);
+ 			break;
+ 		}
+-		skb_deaggr = mwifiex_alloc_dma_align_buf(pkt_len,
+-							 GFP_KERNEL | GFP_DMA);
++
++		skb_deaggr = mwifiex_alloc_dma_align_buf(pkt_len, GFP_KERNEL);
+ 		if (!skb_deaggr)
+ 			break;
+ 		skb_put(skb_deaggr, pkt_len);
+@@ -1373,8 +1373,7 @@ static int mwifiex_sdio_card_to_host_mp_aggr(struct mwifiex_adapter *adapter,
+ 
+ 			/* copy pkt to deaggr buf */
+ 			skb_deaggr = mwifiex_alloc_dma_align_buf(len_arr[pind],
+-								 GFP_KERNEL |
+-								 GFP_DMA);
++								 GFP_KERNEL);
+ 			if (!skb_deaggr) {
+ 				mwifiex_dbg(adapter, ERROR, "skb allocation failure\t"
+ 					    "drop pkt len=%d type=%d\n",
+-- 
+2.7.3
+

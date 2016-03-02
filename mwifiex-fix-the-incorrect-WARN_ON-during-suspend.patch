@@ -1,0 +1,37 @@
+From 84349698f05dc7ed6df6772d43175eb3703ed8dc Mon Sep 17 00:00:00 2001
+From: Vishal Thanki <vishalthanki@gmail.com>
+Date: Thu, 7 Apr 2016 23:37:12 +0200
+Subject: [PATCH 18/25] mwifiex: fix the incorrect WARN_ON during suspend
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+During system suspend, there is a kernel WARNING issued if there
+is a pending command present. By marking the wait queue disabled
+after calling the command completion routine fixes it.
+
+Signed-off-by: Vishal Thanki <vishalthanki@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/cmdevt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/cmdevt.c b/drivers/net/wireless/marvell/mwifiex/cmdevt.c
+index a12adee..6f047064 100644
+--- a/drivers/net/wireless/marvell/mwifiex/cmdevt.c
++++ b/drivers/net/wireless/marvell/mwifiex/cmdevt.c
+@@ -1009,9 +1009,9 @@ mwifiex_cancel_all_pending_cmd(struct mwifiex_adapter *adapter)
+ 	spin_lock_irqsave(&adapter->mwifiex_cmd_lock, cmd_flags);
+ 	/* Cancel current cmd */
+ 	if ((adapter->curr_cmd) && (adapter->curr_cmd->wait_q_enabled)) {
+-		adapter->curr_cmd->wait_q_enabled = false;
+ 		adapter->cmd_wait_q.status = -1;
+ 		mwifiex_complete_cmd(adapter, adapter->curr_cmd);
++		adapter->curr_cmd->wait_q_enabled = false;
+ 		/* no recycle probably wait for response */
+ 	}
+ 	/* Cancel all pending command */
+-- 
+2.7.3
+

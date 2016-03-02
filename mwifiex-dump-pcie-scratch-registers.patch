@@ -1,0 +1,119 @@
+From 4646968b94bdf88ae3c507c347d03acd5798939d Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 5 Apr 2016 01:04:40 -0700
+Subject: [PATCH 11/25] mwifiex: dump pcie scratch registers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch prints pcie scratch registers during firmware dump. They
+will be useful for analysing firmware status.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/main.c |  8 +++---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 42 +++++++++++++++++++++++++++++
+ drivers/net/wireless/marvell/mwifiex/pcie.h |  2 ++
+ 3 files changed, 49 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/main.c b/drivers/net/wireless/marvell/mwifiex/main.c
+index 3cfa946..04b975c 100644
+--- a/drivers/net/wireless/marvell/mwifiex/main.c
++++ b/drivers/net/wireless/marvell/mwifiex/main.c
+@@ -1074,12 +1074,14 @@ void mwifiex_drv_info_dump(struct mwifiex_adapter *adapter)
+ 			     priv->netdev->name, priv->num_tx_timeout);
+ 	}
+ 
+-	if (adapter->iface_type == MWIFIEX_SDIO) {
+-		p += sprintf(p, "\n=== SDIO register dump===\n");
++	if (adapter->iface_type == MWIFIEX_SDIO ||
++	    adapter->iface_type == MWIFIEX_PCIE) {
++		p += sprintf(p, "\n=== %s register dump===\n",
++			     adapter->iface_type == MWIFIEX_SDIO ?
++							"SDIO" : "PCIE");
+ 		if (adapter->if_ops.reg_dump)
+ 			p += adapter->if_ops.reg_dump(adapter, p);
+ 	}
+-
+ 	p += sprintf(p, "\n=== more debug information\n");
+ 	debug_info = kzalloc(sizeof(*debug_info), GFP_KERNEL);
+ 	if (debug_info) {
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index 6a06ca5..edf8b07 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2355,6 +2355,47 @@ static int mwifiex_pcie_host_to_card(struct mwifiex_adapter *adapter, u8 type,
+ 	return 0;
+ }
+ 
++/* Function to dump PCIE scratch registers in case of FW crash
++ */
++static int
++mwifiex_pcie_reg_dump(struct mwifiex_adapter *adapter, char *drv_buf)
++{
++	char *p = drv_buf;
++	char buf[256], *ptr;
++	int i;
++	u32 value;
++	struct pcie_service_card *card = adapter->card;
++	const struct mwifiex_pcie_card_reg *reg = card->pcie.reg;
++	int pcie_scratch_reg[] = {PCIE_SCRATCH_12_REG,
++				  PCIE_SCRATCH_13_REG,
++				  PCIE_SCRATCH_14_REG};
++
++	if (!p)
++		return 0;
++
++	mwifiex_dbg(adapter, MSG, "PCIE register dump start\n");
++
++	if (mwifiex_read_reg(adapter, reg->fw_status, &value)) {
++		mwifiex_dbg(adapter, ERROR, "failed to read firmware status");
++		return 0;
++	}
++
++	ptr = buf;
++	mwifiex_dbg(adapter, MSG, "pcie scratch register:");
++	for (i = 0; i < ARRAY_SIZE(pcie_scratch_reg); i++) {
++		mwifiex_read_reg(adapter, pcie_scratch_reg[i], &value);
++		ptr += sprintf(ptr, "reg:0x%x, value=0x%x\n",
++			       pcie_scratch_reg[i], value);
++	}
++
++	mwifiex_dbg(adapter, MSG, "%s\n", buf);
++	p += sprintf(p, "%s\n", buf);
++
++	mwifiex_dbg(adapter, MSG, "PCIE register dump end\n");
++
++	return p - drv_buf;
++}
++
+ /* This function read/write firmware */
+ static enum rdwr_status
+ mwifiex_pcie_rdwr_firmware(struct mwifiex_adapter *adapter, u8 doneflag)
+@@ -2899,6 +2940,7 @@ static struct mwifiex_if_ops pcie_ops = {
+ 	.cleanup_mpa_buf =		NULL,
+ 	.init_fw_port =			mwifiex_pcie_init_fw_port,
+ 	.clean_pcie_ring =		mwifiex_clean_pcie_ring_buf,
++	.reg_dump =			mwifiex_pcie_reg_dump,
+ 	.device_dump =			mwifiex_pcie_device_dump,
+ };
+ 
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.h b/drivers/net/wireless/marvell/mwifiex/pcie.h
+index 4455d19..cc7a5df 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.h
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.h
+@@ -73,6 +73,8 @@
+ #define PCIE_SCRATCH_10_REG				0xCE8
+ #define PCIE_SCRATCH_11_REG				0xCEC
+ #define PCIE_SCRATCH_12_REG				0xCF0
++#define PCIE_SCRATCH_13_REG				0xCF8
++#define PCIE_SCRATCH_14_REG				0xCFC
+ #define PCIE_RD_DATA_PTR_Q0_Q1                          0xC08C
+ #define PCIE_WR_DATA_PTR_Q0_Q1                          0xC05C
+ 
+-- 
+2.7.3
+

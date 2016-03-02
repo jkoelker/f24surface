@@ -1,0 +1,44 @@
+From 2ccf7cef0cf984241d0b6932ed1cfb1e0d6587d5 Mon Sep 17 00:00:00 2001
+From: Andreas Fenkart <afenkart@gmail.com>
+Date: Thu, 10 Mar 2016 09:44:07 +0100
+Subject: [PATCH 21/25] mwifiex: scan: simplify ternary operators using gnu
+ extension
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+"x ? x : y" can be simplified as "x ? : y"
+https://gcc.gnu.org/onlinedocs/gcc/Conditionals.html#Conditionals
+
+Reviewed-by: Julian Calaby <julian.calaby@gmail.com>
+Signed-off-by: Andreas Fenkart <afenkart@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/scan.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/scan.c b/drivers/net/wireless/marvell/mwifiex/scan.c
+index e926d3a..11f8a60 100644
+--- a/drivers/net/wireless/marvell/mwifiex/scan.c
++++ b/drivers/net/wireless/marvell/mwifiex/scan.c
+@@ -900,14 +900,11 @@ mwifiex_config_scan(struct mwifiex_private *priv,
+ 		/* Set the BSS type scan filter, use Adapter setting if
+ 		   unset */
+ 		scan_cfg_out->bss_mode =
+-			(user_scan_in->bss_mode ? (u8) user_scan_in->
+-			 bss_mode : (u8) adapter->scan_mode);
++			(u8)(user_scan_in->bss_mode ?: adapter->scan_mode);
+ 
+ 		/* Set the number of probes to send, use Adapter setting
+ 		   if unset */
+-		num_probes =
+-			(user_scan_in->num_probes ? user_scan_in->
+-			 num_probes : adapter->scan_probes);
++		num_probes = user_scan_in->num_probes ?: adapter->scan_probes;
+ 
+ 		/*
+ 		 * Set the BSSID filter to the incoming configuration,
+-- 
+2.7.3
+
