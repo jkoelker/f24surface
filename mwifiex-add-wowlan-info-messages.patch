@@ -1,0 +1,57 @@
+From 5323b53d80fc17604b2c60b725af116827330b2c Mon Sep 17 00:00:00 2001
+From: chunfan chen <jeffc@marvell.com>
+Date: Wed, 13 Jan 2016 01:26:53 -0800
+Subject: [PATCH 07/23] mwifiex: add wowlan info messages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch adds informative messages in wake up on
+magic packet, disconnect, pattern configuration paths.
+
+Signed-off-by: chunfan chen <jeffc@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/cfg80211.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/cfg80211.c b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+index c27c6cc..6d36d08 100644
+--- a/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -3171,10 +3171,12 @@ static int mwifiex_set_wowlan_mef_entry(struct mwifiex_private *priv,
+ 				sizeof(byte_seq));
+ 		mef_entry->filter[filt_num].filt_type = TYPE_EQ;
+ 
+-		if (first_pat)
++		if (first_pat) {
+ 			first_pat = false;
+-		else
++			mwifiex_dbg(priv->adapter, INFO, "Wake on patterns\n");
++		} else {
+ 			mef_entry->filter[filt_num].filt_action = TYPE_AND;
++		}
+ 
+ 		filt_num++;
+ 	}
+@@ -3200,6 +3202,7 @@ static int mwifiex_set_wowlan_mef_entry(struct mwifiex_private *priv,
+ 		mef_entry->filter[filt_num].offset = 56;
+ 		mef_entry->filter[filt_num].filt_type = TYPE_EQ;
+ 		mef_entry->filter[filt_num].filt_action = TYPE_OR;
++		mwifiex_dbg(priv->adapter, INFO, "Wake on magic packet\n");
+ 	}
+ 	return ret;
+ }
+@@ -3295,6 +3298,7 @@ static int mwifiex_cfg80211_suspend(struct wiphy *wiphy,
+ 				    "Failed to set HS params\n");
+ 			return ret;
+ 		}
++		mwifiex_dbg(priv->adapter, INFO, "Wake on device disconnect\n");
+ 	}
+ 
+ 	return ret;
+-- 
+2.7.2
+

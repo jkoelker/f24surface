@@ -1,0 +1,44 @@
+From 03f0f7cdebeb0872076817ff835ea812a62b37c6 Mon Sep 17 00:00:00 2001
+From: Amitkumar Karwar <akarwar@marvell.com>
+Date: Tue, 2 Feb 2016 22:05:08 -0800
+Subject: [PATCH 20/23] mwifiex: increase the priority of firmware dump message
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Firmware dump operation takes few seconds. Hence it's
+important to notify user in dmesg that firmware dump
+has started or completed.
+
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index a62a09b..14fe316 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2422,7 +2422,7 @@ static void mwifiex_pcie_fw_dump(struct mwifiex_adapter *adapter)
+ 		entry->mem_size = 0;
+ 	}
+ 
+-	mwifiex_dbg(adapter, DUMP, "== mwifiex firmware dump start ==\n");
++	mwifiex_dbg(adapter, MSG, "== mwifiex firmware dump start ==\n");
+ 
+ 	/* Read the number of the memories which will dump */
+ 	stat = mwifiex_pcie_rdwr_firmware(adapter, doneflag);
+@@ -2512,7 +2512,7 @@ static void mwifiex_pcie_fw_dump(struct mwifiex_adapter *adapter)
+ 			break;
+ 		} while (true);
+ 	}
+-	mwifiex_dbg(adapter, DUMP, "== mwifiex firmware dump end ==\n");
++	mwifiex_dbg(adapter, MSG, "== mwifiex firmware dump end ==\n");
+ }
+ 
+ static void mwifiex_pcie_device_dump_work(struct mwifiex_adapter *adapter)
+-- 
+2.7.2
+

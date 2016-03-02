@@ -1,0 +1,78 @@
+From 56486026c282983c390b264493a4619d997b86f1 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 2 Feb 2016 22:05:07 -0800
+Subject: [PATCH 19/23] mwifiex: dynamically increase preallocated firmware
+ dump memory size
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch increase firmware dump memory 4K each time, until
+meet the demand.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/decl.h |  2 ++
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 21 ++++++++++++++++-----
+ 2 files changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/decl.h b/drivers/net/wireless/marvell/mwifiex/decl.h
+index c744a70..a184f9f 100644
+--- a/drivers/net/wireless/marvell/mwifiex/decl.h
++++ b/drivers/net/wireless/marvell/mwifiex/decl.h
+@@ -122,6 +122,8 @@
+ #define BLOCK_NUMBER_OFFSET		15
+ #define SDIO_HEADER_OFFSET		28
+ 
++#define MWIFIEX_SIZE_4K 0x4000
++
+ enum mwifiex_bss_type {
+ 	MWIFIEX_BSS_TYPE_STA = 0,
+ 	MWIFIEX_BSS_TYPE_UAP = 1,
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index c94d31e..a62a09b 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2402,7 +2402,8 @@ static void mwifiex_pcie_fw_dump(struct mwifiex_adapter *adapter)
+ 	struct pcie_service_card *card = adapter->card;
+ 	const struct mwifiex_pcie_card_reg *creg = card->pcie.reg;
+ 	unsigned int reg, reg_start, reg_end;
+-	u8 *dbg_ptr, *end_ptr, dump_num, idx, i, read_reg, doneflag = 0;
++	u8 *dbg_ptr, *end_ptr, *tmp_ptr, dump_num;
++	u8 idx, i, read_reg, doneflag = 0;
+ 	enum rdwr_status stat;
+ 	u32 memory_size;
+ 	int ret;
+@@ -2485,11 +2486,21 @@ static void mwifiex_pcie_fw_dump(struct mwifiex_adapter *adapter)
+ 				mwifiex_read_reg_byte(adapter, reg, dbg_ptr);
+ 				if (dbg_ptr < end_ptr) {
+ 					dbg_ptr++;
+-				} else {
+-					mwifiex_dbg(adapter, ERROR,
+-						    "Allocated buf not enough\n");
+-					return;
++					continue;
+ 				}
++				mwifiex_dbg(adapter, ERROR,
++					    "pre-allocated buf not enough\n");
++				tmp_ptr =
++					vzalloc(memory_size + MWIFIEX_SIZE_4K);
++				if (!tmp_ptr)
++					return;
++				memcpy(tmp_ptr, entry->mem_ptr, memory_size);
++				vfree(entry->mem_ptr);
++				entry->mem_ptr = tmp_ptr;
++				tmp_ptr = NULL;
++				dbg_ptr = entry->mem_ptr + memory_size;
++				memory_size += MWIFIEX_SIZE_4K;
++				end_ptr = entry->mem_ptr + memory_size;
+ 			}
+ 
+ 			if (stat != RDWR_STATUS_DONE)
+-- 
+2.7.2
+

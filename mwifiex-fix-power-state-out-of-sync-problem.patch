@@ -1,0 +1,58 @@
+From dc896b15fe94345912ff13fa8eb581b5c6acccde Mon Sep 17 00:00:00 2001
+From: Shengzhen Li <szli@marvell.com>
+Date: Tue, 12 Jan 2016 05:43:16 -0800
+Subject: [PATCH 05/23] mwifiex: fix power state out of sync problem
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It's been observed that driver's power state goes out
+of sync with firmware in some corner cases. When this
+happens, driver tries to download the data to firmware
+assuming it's awake which causes Tx data timeout.
+
+Main thread will process interrupt as soon as interrupt
+handler fills 'int_status' variable.
+
+This patch fixes the race issue by updating 'int_status'
+at the end of mwifiex_interrupt_status().
+
+Signed-off-by: Shengzhen Li <szli@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index 5e15464..918e049 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2116,11 +2116,6 @@ static void mwifiex_interrupt_status(struct mwifiex_adapter *adapter,
+ 		}
+ 	}
+ 
+-	spin_lock_irqsave(&adapter->int_lock, flags);
+-	adapter->int_status |= pcie_ireg;
+-	spin_unlock_irqrestore(&adapter->int_lock, flags);
+-	mwifiex_dbg(adapter, INTR, "ireg: 0x%08x\n", pcie_ireg);
+-
+ 	if (!adapter->pps_uapsd_mode &&
+ 	    adapter->ps_state == PS_STATE_SLEEP &&
+ 	    mwifiex_pcie_ok_to_access_hw(adapter)) {
+@@ -2132,6 +2127,11 @@ static void mwifiex_interrupt_status(struct mwifiex_adapter *adapter,
+ 		adapter->pm_wakeup_fw_try = false;
+ 		del_timer(&adapter->wakeup_timer);
+ 	}
++
++	spin_lock_irqsave(&adapter->int_lock, flags);
++	adapter->int_status |= pcie_ireg;
++	spin_unlock_irqrestore(&adapter->int_lock, flags);
++	mwifiex_dbg(adapter, INTR, "ireg: 0x%08x\n", pcie_ireg);
+ }
+ 
+ /*
+-- 
+2.7.2
+

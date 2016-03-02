@@ -1,0 +1,36 @@
+From af05148392f50490c662dccee6c502d9fcba33e2 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 2 Feb 2016 22:05:03 -0800
+Subject: [PATCH 15/23] mwifiex: process pcie io memory read failure case
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It is observed that ioread32 may fail to read pcie register
+in certain scenarios, this patch handles these cases.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index 918e049..b9fe181 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -323,6 +323,8 @@ static int mwifiex_read_reg(struct mwifiex_adapter *adapter, int reg, u32 *data)
+ 	struct pcie_service_card *card = adapter->card;
+ 
+ 	*data = ioread32(card->pci_mmap1 + reg);
++	if (*data == 0xffffffff)
++		return 0xffffffff;
+ 
+ 	return 0;
+ }
+-- 
+2.7.2
+

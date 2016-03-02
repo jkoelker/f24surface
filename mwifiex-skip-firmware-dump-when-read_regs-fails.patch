@@ -1,0 +1,42 @@
+From 0172404d79ec37e2c7d9dc90f6876dc314dc0fe5 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 2 Feb 2016 22:05:04 -0800
+Subject: [PATCH 16/23] mwifiex: skip firmware dump when read_regs() fails
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If we are not able to read registers or PCIe memory,
+it means PCIe device is in bad state. We will skip
+firmware dump in this case.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index b9fe181..a18d944 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2366,9 +2366,13 @@ mwifiex_pcie_rdwr_firmware(struct mwifiex_adapter *adapter, u8 doneflag)
+ {
+ 	int ret, tries;
+ 	u8 ctrl_data;
++	u32 fw_status;
+ 	struct pcie_service_card *card = adapter->card;
+ 	const struct mwifiex_pcie_card_reg *reg = card->pcie.reg;
+ 
++	if (mwifiex_read_reg(adapter, reg->fw_status, &fw_status))
++		return RDWR_STATUS_FAILURE;
++
+ 	ret = mwifiex_write_reg(adapter, reg->fw_dump_ctrl, FW_DUMP_HOST_READY);
+ 	if (ret) {
+ 		mwifiex_dbg(adapter, ERROR,
+-- 
+2.7.2
+

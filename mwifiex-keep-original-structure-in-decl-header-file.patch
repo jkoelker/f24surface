@@ -1,0 +1,100 @@
+From 9a86232213b9498e0c0721fc508f760e7a089e59 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 2 Feb 2016 22:05:05 -0800
+Subject: [PATCH 17/23] mwifiex: keep original structure in decl header file
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+memory_type_mapping strucuture did not refer to other mwifiex
+specific strture. A better software design method would keep
+it in decl header file, which does not include other mwifiex
+header file.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/decl.h | 21 +++++++++++++++++++++
+ drivers/net/wireless/marvell/mwifiex/main.h | 20 --------------------
+ drivers/net/wireless/marvell/mwifiex/pcie.h |  1 +
+ 3 files changed, 22 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/decl.h b/drivers/net/wireless/marvell/mwifiex/decl.h
+index d9c15cd..c744a70 100644
+--- a/drivers/net/wireless/marvell/mwifiex/decl.h
++++ b/drivers/net/wireless/marvell/mwifiex/decl.h
+@@ -270,4 +270,25 @@ struct mwifiex_11h_intf_state {
+ 	bool is_11h_enabled;
+ 	bool is_11h_active;
+ } __packed;
++
++#define MWIFIEX_FW_DUMP_IDX		0xff
++#define MWIFIEX_DRV_INFO_IDX		20
++#define FW_DUMP_MAX_NAME_LEN		8
++#define FW_DUMP_HOST_READY      0xEE
++#define FW_DUMP_DONE			0xFF
++#define FW_DUMP_READ_DONE		0xFE
++
++struct memory_type_mapping {
++	u8 mem_name[FW_DUMP_MAX_NAME_LEN];
++	u8 *mem_ptr;
++	u32 mem_size;
++	u8 done_flag;
++};
++
++enum rdwr_status {
++	RDWR_STATUS_SUCCESS = 0,
++	RDWR_STATUS_FAILURE = 1,
++	RDWR_STATUS_DONE = 2
++};
++
+ #endif /* !_MWIFIEX_DECL_H_ */
+diff --git a/drivers/net/wireless/marvell/mwifiex/main.h b/drivers/net/wireless/marvell/mwifiex/main.h
+index 0433977..aea7aee 100644
+--- a/drivers/net/wireless/marvell/mwifiex/main.h
++++ b/drivers/net/wireless/marvell/mwifiex/main.h
+@@ -489,26 +489,6 @@ struct mwifiex_roc_cfg {
+ 	struct ieee80211_channel chan;
+ };
+ 
+-#define MWIFIEX_FW_DUMP_IDX		0xff
+-#define MWIFIEX_DRV_INFO_IDX		20
+-#define FW_DUMP_MAX_NAME_LEN		8
+-#define FW_DUMP_HOST_READY		0xEE
+-#define FW_DUMP_DONE			0xFF
+-#define FW_DUMP_READ_DONE		0xFE
+-
+-struct memory_type_mapping {
+-	u8 mem_name[FW_DUMP_MAX_NAME_LEN];
+-	u8 *mem_ptr;
+-	u32 mem_size;
+-	u8 done_flag;
+-};
+-
+-enum rdwr_status {
+-	RDWR_STATUS_SUCCESS = 0,
+-	RDWR_STATUS_FAILURE = 1,
+-	RDWR_STATUS_DONE = 2
+-};
+-
+ enum mwifiex_iface_work_flags {
+ 	MWIFIEX_IFACE_WORK_DEVICE_DUMP,
+ 	MWIFIEX_IFACE_WORK_CARD_RESET,
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.h b/drivers/net/wireless/marvell/mwifiex/pcie.h
+index 9700ac3..8f190c4 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.h
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.h
+@@ -26,6 +26,7 @@
+ #include    <linux/pcieport_if.h>
+ #include    <linux/interrupt.h>
+ 
++#include    "decl.h"
+ #include    "main.h"
+ 
+ #define PCIE8766_DEFAULT_FW_NAME "mrvl/pcie8766_uapsta.bin"
+-- 
+2.7.2
+

@@ -1,0 +1,243 @@
+From 2fd5c6ed0b4fbf3c2d9314a24c82862ce5254d42 Mon Sep 17 00:00:00 2001
+From: chunfan chen <jeffc@marvell.com>
+Date: Wed, 6 Jan 2016 23:40:47 -0800
+Subject: [PATCH 01/23] mwifiex: firmware download enhancements
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Same chip is being used by WLAN as well as bluetooth
+drivers. Each driver needs to check during initialisation
+if firmware is already active or it needs to be freshly
+downloaded. If one driver has started downloading the
+firmware, other finds the winner flag as false.
+
+mwifiex_check_fw_status() checks firmware status and also
+check if WLAN is the winner for firmware downloading.
+
+Once we detect that other interface is downloading
+the firmware, we call this routine again with max
+poll count to wait until firmware is ready.
+
+This patch splits the routine to avoid checking
+winner status unnecessarily multiple times and ensures
+that correct messages are displayed to user.
+
+Firmware status poll count is also increased to 150.
+
+Signed-off-by: Chunfan Chen <jeffc@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/fw.h   |  2 +-
+ drivers/net/wireless/marvell/mwifiex/init.c | 16 +++++++++---
+ drivers/net/wireless/marvell/mwifiex/main.h |  1 +
+ drivers/net/wireless/marvell/mwifiex/pcie.c | 40 +++++++++++++++++------------
+ drivers/net/wireless/marvell/mwifiex/sdio.c | 33 ++++++++++++++----------
+ 5 files changed, 57 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/fw.h b/drivers/net/wireless/marvell/mwifiex/fw.h
+index ced7af2..426e76a 100644
+--- a/drivers/net/wireless/marvell/mwifiex/fw.h
++++ b/drivers/net/wireless/marvell/mwifiex/fw.h
+@@ -96,7 +96,7 @@ enum KEY_TYPE_ID {
+ #define WAPI_KEY_LEN			(WLAN_KEY_LEN_SMS4 + PN_LEN + 2)
+ 
+ #define MAX_POLL_TRIES			100
+-#define MAX_FIRMWARE_POLL_TRIES			100
++#define MAX_FIRMWARE_POLL_TRIES			150
+ 
+ #define FIRMWARE_READY_SDIO				0xfedc
+ #define FIRMWARE_READY_PCIE				0xfedcba00
+diff --git a/drivers/net/wireless/marvell/mwifiex/init.c b/drivers/net/wireless/marvell/mwifiex/init.c
+index 6f7876e..517653b 100644
+--- a/drivers/net/wireless/marvell/mwifiex/init.c
++++ b/drivers/net/wireless/marvell/mwifiex/init.c
+@@ -741,8 +741,6 @@ int mwifiex_dnld_fw(struct mwifiex_adapter *adapter,
+ 	u32 poll_num = 1;
+ 
+ 	if (adapter->if_ops.check_fw_status) {
+-		adapter->winner = 0;
+-
+ 		/* check if firmware is already running */
+ 		ret = adapter->if_ops.check_fw_status(adapter, poll_num);
+ 		if (!ret) {
+@@ -750,13 +748,23 @@ int mwifiex_dnld_fw(struct mwifiex_adapter *adapter,
+ 				    "WLAN FW already running! Skip FW dnld\n");
+ 			return 0;
+ 		}
++	}
++
++	/* check if we are the winner for downloading FW */
++	if (adapter->if_ops.check_winner_status) {
++		adapter->winner = 0;
++		ret = adapter->if_ops.check_winner_status(adapter);
+ 
+ 		poll_num = MAX_FIRMWARE_POLL_TRIES;
++		if (ret) {
++			mwifiex_dbg(adapter, MSG,
++				    "WLAN read winner status failed!\n");
++			return ret;
++		}
+ 
+-		/* check if we are the winner for downloading FW */
+ 		if (!adapter->winner) {
+ 			mwifiex_dbg(adapter, MSG,
+-				    "FW already running! Skip FW dnld\n");
++				    "WLAN is not the winner! Skip FW dnld\n");
+ 			goto poll_fw;
+ 		}
+ 	}
+diff --git a/drivers/net/wireless/marvell/mwifiex/main.h b/drivers/net/wireless/marvell/mwifiex/main.h
+index 2f7f478..c08be79 100644
+--- a/drivers/net/wireless/marvell/mwifiex/main.h
++++ b/drivers/net/wireless/marvell/mwifiex/main.h
+@@ -791,6 +791,7 @@ struct mwifiex_if_ops {
+ 	int (*init_if) (struct mwifiex_adapter *);
+ 	void (*cleanup_if) (struct mwifiex_adapter *);
+ 	int (*check_fw_status) (struct mwifiex_adapter *, u32);
++	int (*check_winner_status)(struct mwifiex_adapter *);
+ 	int (*prog_fw) (struct mwifiex_adapter *, struct mwifiex_fw_image *);
+ 	int (*register_dev) (struct mwifiex_adapter *);
+ 	void (*unregister_dev) (struct mwifiex_adapter *);
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index 6d0dc40..f448d7c 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -2007,14 +2007,12 @@ done:
+ 
+ /*
+  * This function checks the firmware status in card.
+- *
+- * The winner interface is also determined by this function.
+  */
+ static int
+ mwifiex_check_fw_status(struct mwifiex_adapter *adapter, u32 poll_num)
+ {
+ 	int ret = 0;
+-	u32 firmware_stat, winner_status;
++	u32 firmware_stat;
+ 	struct pcie_service_card *card = adapter->card;
+ 	const struct mwifiex_pcie_card_reg *reg = card->pcie.reg;
+ 	u32 tries;
+@@ -2054,19 +2052,28 @@ mwifiex_check_fw_status(struct mwifiex_adapter *adapter, u32 poll_num)
+ 		}
+ 	}
+ 
+-	if (ret) {
+-		if (mwifiex_read_reg(adapter, reg->fw_status,
+-				     &winner_status))
+-			ret = -1;
+-		else if (!winner_status) {
+-			mwifiex_dbg(adapter, INFO,
+-				    "PCI-E is the winner\n");
+-			adapter->winner = 1;
+-		} else {
+-			mwifiex_dbg(adapter, ERROR,
+-				    "PCI-E is not the winner <%#x,%d>, exit dnld\n",
+-				    ret, adapter->winner);
+-		}
++	return ret;
++}
++
++/* This function checks if WLAN is the winner.
++ */
++static int
++mwifiex_check_winner_status(struct mwifiex_adapter *adapter)
++{
++	u32 winner = 0;
++	int ret = 0;
++	struct pcie_service_card *card = adapter->card;
++	const struct mwifiex_pcie_card_reg *reg = card->pcie.reg;
++
++	if (mwifiex_read_reg(adapter, reg->fw_status, &winner)) {
++		ret = -1;
++	} else if (!winner) {
++		mwifiex_dbg(adapter, INFO, "PCI-E is the winner\n");
++		adapter->winner = 1;
++	} else {
++		mwifiex_dbg(adapter, ERROR,
++			    "PCI-E is not the winner <%#x,%d>, exit dnld\n",
++			    ret, adapter->winner);
+ 	}
+ 
+ 	return ret;
+@@ -2675,6 +2682,7 @@ static struct mwifiex_if_ops pcie_ops = {
+ 	.init_if =			mwifiex_pcie_init,
+ 	.cleanup_if =			mwifiex_pcie_cleanup,
+ 	.check_fw_status =		mwifiex_check_fw_status,
++	.check_winner_status =          mwifiex_check_winner_status,
+ 	.prog_fw =			mwifiex_prog_fw_w_helper,
+ 	.register_dev =			mwifiex_register_dev,
+ 	.unregister_dev =		mwifiex_unregister_dev,
+diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.c b/drivers/net/wireless/marvell/mwifiex/sdio.c
+index 4c8cae6..33771d3 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sdio.c
++++ b/drivers/net/wireless/marvell/mwifiex/sdio.c
+@@ -1039,19 +1039,14 @@ done:
+ 
+ /*
+  * This function checks the firmware status in card.
+- *
+- * The winner interface is also determined by this function.
+  */
+ static int mwifiex_check_fw_status(struct mwifiex_adapter *adapter,
+ 				   u32 poll_num)
+ {
+-	struct sdio_mmc_card *card = adapter->card;
+ 	int ret = 0;
+ 	u16 firmware_stat;
+ 	u32 tries;
+-	u8 winner_status;
+ 
+-	/* Wait for firmware initialization event */
+ 	for (tries = 0; tries < poll_num; tries++) {
+ 		ret = mwifiex_sdio_read_fw_status(adapter, &firmware_stat);
+ 		if (ret)
+@@ -1065,16 +1060,25 @@ static int mwifiex_check_fw_status(struct mwifiex_adapter *adapter,
+ 		}
+ 	}
+ 
+-	if (ret) {
+-		if (mwifiex_read_reg
+-		    (adapter, card->reg->status_reg_0, &winner_status))
+-			winner_status = 0;
++	return ret;
++}
++
++/* This function checks if WLAN is the winner.
++ */
++static int mwifiex_check_winner_status(struct mwifiex_adapter *adapter)
++{
++	int ret = 0;
++	u8 winner = 0;
++	struct sdio_mmc_card *card = adapter->card;
++
++	if (mwifiex_read_reg(adapter, card->reg->status_reg_0, &winner))
++		return -1;
++
++	if (winner)
++		adapter->winner = 0;
++	else
++		adapter->winner = 1;
+ 
+-		if (winner_status)
+-			adapter->winner = 0;
+-		else
+-			adapter->winner = 1;
+-	}
+ 	return ret;
+ }
+ 
+@@ -2620,6 +2624,7 @@ static struct mwifiex_if_ops sdio_ops = {
+ 	.init_if = mwifiex_init_sdio,
+ 	.cleanup_if = mwifiex_cleanup_sdio,
+ 	.check_fw_status = mwifiex_check_fw_status,
++	.check_winner_status = mwifiex_check_winner_status,
+ 	.prog_fw = mwifiex_prog_fw_w_helper,
+ 	.register_dev = mwifiex_register_dev,
+ 	.unregister_dev = mwifiex_unregister_dev,
+-- 
+2.7.2
+

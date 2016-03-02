@@ -1,0 +1,48 @@
+From 0cb52aac4d19510d13410ee4232c0248fabe750e Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 23 Feb 2016 05:16:19 -0800
+Subject: [PATCH 5/8] mwifiex: do not set multiport flag for tx/rx single
+ packet
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+multiport address flag(0x1000) should not be set during sdio cmd53,
+if we have only one packet to read/write.
+
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/sdio.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.c b/drivers/net/wireless/marvell/mwifiex/sdio.c
+index 838b260..b2c839a 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sdio.c
++++ b/drivers/net/wireless/marvell/mwifiex/sdio.c
+@@ -1355,6 +1355,9 @@ static int mwifiex_sdio_card_to_host_mp_aggr(struct mwifiex_adapter *adapter,
+ 				 card->mpa_rx.start_port;
+ 		}
+ 
++		if (card->mpa_rx.pkt_cnt == 1)
++			mport = adapter->ioport + port;
++
+ 		if (mwifiex_read_data_sync(adapter, card->mpa_rx.buf,
+ 					   card->mpa_rx.buf_len, mport, 1))
+ 			goto error;
+@@ -1786,6 +1789,9 @@ static int mwifiex_host_to_card_mp_aggr(struct mwifiex_adapter *adapter,
+ 				 card->mpa_tx.start_port;
+ 		}
+ 
++		if (card->mpa_tx.pkt_cnt == 1)
++			mport = adapter->ioport + port;
++
+ 		ret = mwifiex_write_data_to_card(adapter, card->mpa_tx.buf,
+ 						 card->mpa_tx.buf_len, mport);
+ 
+-- 
+2.7.2
+

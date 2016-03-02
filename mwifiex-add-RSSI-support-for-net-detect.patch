@@ -1,0 +1,89 @@
+From fdcab083055d759325c8e0f8999d9e192417fc20 Mon Sep 17 00:00:00 2001
+From: Ganapathi Bhat <gbhat@marvell.com>
+Date: Wed, 13 Jan 2016 01:26:56 -0800
+Subject: [PATCH 10/23] mwifiex: add RSSI support for net-detect
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch adds support for waking up the device on
+finding better RSSI. Threshold RSSI value will be
+configured by application.
+
+Signed-off-by: Ganapathi Bhat <gbhat@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/cfg80211.c |  4 ++++
+ drivers/net/wireless/marvell/mwifiex/fw.h       |  5 +++++
+ drivers/net/wireless/marvell/mwifiex/scan.c     | 15 +++++++++++++++
+ 3 files changed, 24 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/cfg80211.c b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+index c80d9e2..8461553 100644
+--- a/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -2582,6 +2582,10 @@ mwifiex_cfg80211_sched_scan_start(struct wiphy *wiphy,
+ 	bgscan_cfg->bss_type = MWIFIEX_BSS_MODE_INFRA;
+ 	bgscan_cfg->action = MWIFIEX_BGSCAN_ACT_SET;
+ 	bgscan_cfg->enable = true;
++	if (request->min_rssi_thold != NL80211_SCAN_RSSI_THOLD_OFF) {
++		bgscan_cfg->report_condition |= MWIFIEX_BGSCAN_SSID_RSSI_MATCH;
++		bgscan_cfg->rssi_threshold = request->min_rssi_thold;
++	}
+ 
+ 	if (mwifiex_send_cmd(priv, HostCmd_CMD_802_11_BG_SCAN_CONFIG,
+ 			     HostCmd_ACT_GEN_SET, 0, bgscan_cfg, true)) {
+diff --git a/drivers/net/wireless/marvell/mwifiex/fw.h b/drivers/net/wireless/marvell/mwifiex/fw.h
+index d293e48..4af9168 100644
+--- a/drivers/net/wireless/marvell/mwifiex/fw.h
++++ b/drivers/net/wireless/marvell/mwifiex/fw.h
+@@ -759,6 +759,11 @@ struct mwifiex_ie_types_repeat_count {
+ 	__le16 repeat_count;
+ } __packed;
+ 
++struct mwifiex_ie_types_min_rssi_threshold {
++	struct mwifiex_ie_types_header header;
++	__le16 rssi_threshold;
++} __packed;
++
+ struct mwifiex_ie_types_bgscan_start_later {
+ 	struct mwifiex_ie_types_header header;
+ 	__le16 start_later;
+diff --git a/drivers/net/wireless/marvell/mwifiex/scan.c b/drivers/net/wireless/marvell/mwifiex/scan.c
+index 2702bd9..fc8d8ca 100644
+--- a/drivers/net/wireless/marvell/mwifiex/scan.c
++++ b/drivers/net/wireless/marvell/mwifiex/scan.c
+@@ -2260,6 +2260,7 @@ int mwifiex_cmd_802_11_bg_scan_config(struct mwifiex_private *priv,
+ 	int i;
+ 	struct mwifiex_ie_types_num_probes *num_probes_tlv;
+ 	struct mwifiex_ie_types_repeat_count *repeat_count_tlv;
++	struct mwifiex_ie_types_min_rssi_threshold *rssi_threshold_tlv;
+ 	struct mwifiex_ie_types_bgscan_start_later *start_later_tlv;
+ 	struct mwifiex_ie_types_wildcard_ssid_params *wildcard_ssid_tlv;
+ 	struct mwifiex_ie_types_chan_list_param_set *chan_list_tlv;
+@@ -2310,6 +2311,20 @@ int mwifiex_cmd_802_11_bg_scan_config(struct mwifiex_private *priv,
+ 			le16_to_cpu(repeat_count_tlv->header.len);
+ 	}
+ 
++	if (bgscan_cfg_in->rssi_threshold) {
++		rssi_threshold_tlv =
++			(struct mwifiex_ie_types_min_rssi_threshold *)tlv_pos;
++		rssi_threshold_tlv->header.type =
++			cpu_to_le16(TLV_TYPE_RSSI_LOW);
++		rssi_threshold_tlv->header.len =
++			cpu_to_le16(sizeof(rssi_threshold_tlv->rssi_threshold));
++		rssi_threshold_tlv->rssi_threshold =
++			cpu_to_le16(bgscan_cfg_in->rssi_threshold);
++
++		tlv_pos += sizeof(rssi_threshold_tlv->header) +
++			le16_to_cpu(rssi_threshold_tlv->header.len);
++	}
++
+ 	for (i = 0; i < bgscan_cfg_in->num_ssids; i++) {
+ 		ssid_len = bgscan_cfg_in->ssid_list[i].ssid.ssid_len;
+ 
+-- 
+2.7.2
+

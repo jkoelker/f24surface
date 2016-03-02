@@ -1,0 +1,33 @@
+From 32962d5b43b748c43b9b0b32d02674c1ce6997a9 Mon Sep 17 00:00:00 2001
+From: Ujjal Roy <royujjal@gmail.com>
+Date: Thu, 25 Feb 2016 00:49:23 +0530
+Subject: [PATCH 6/8] mwifiex: Fixed incorrect indentation issue
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch fixes the incorrect indentation of the case label.
+
+Signed-off-by: Ujjal Roy <royujjal@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/cfg80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/cfg80211.c b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+index f2dce81..29b7f6e 100644
+--- a/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -676,7 +676,7 @@ mwifiex_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
+ 		}
+ 		break;
+ 
+-		case MWIFIEX_BSS_ROLE_STA:
++	case MWIFIEX_BSS_ROLE_STA:
+ 		if (priv->media_connected) {
+ 			mwifiex_dbg(adapter, ERROR,
+ 				    "cannot change wiphy params when connected");
+-- 
+2.7.2
+

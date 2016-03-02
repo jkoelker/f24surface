@@ -1,0 +1,47 @@
+From 3a968d766a63267b3d6b7a66b9d7023b7d93eaae Mon Sep 17 00:00:00 2001
+From: Ujjal Roy <royujjal@gmail.com>
+Date: Thu, 25 Feb 2016 00:49:43 +0530
+Subject: [PATCH 7/8] mwifiex: Removed extra spaces before commas
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch fixes spaces before commas issue in coding style.
+
+Signed-off-by: Ujjal Roy <royujjal@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/pcie.c    | 2 +-
+ drivers/net/wireless/marvell/mwifiex/uap_cmd.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index efb19e2..de36438 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -1401,7 +1401,7 @@ mwifiex_pcie_send_boot_cmd(struct mwifiex_adapter *adapter, struct sk_buff *skb)
+ 		return -1;
+ 	}
+ 
+-	if (mwifiex_map_pci_memory(adapter, skb, skb->len , PCI_DMA_TODEVICE))
++	if (mwifiex_map_pci_memory(adapter, skb, skb->len, PCI_DMA_TODEVICE))
+ 		return -1;
+ 
+ 	buf_pa = MWIFIEX_SKB_DMA_ADDR(skb);
+diff --git a/drivers/net/wireless/marvell/mwifiex/uap_cmd.c b/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
+index e791166..16d95b2 100644
+--- a/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
++++ b/drivers/net/wireless/marvell/mwifiex/uap_cmd.c
+@@ -192,7 +192,7 @@ mwifiex_set_ht_params(struct mwifiex_private *priv,
+ 		}
+ 		priv->ap_11n_enabled = 1;
+ 	} else {
+-		memset(&bss_cfg->ht_cap , 0, sizeof(struct ieee80211_ht_cap));
++		memset(&bss_cfg->ht_cap, 0, sizeof(struct ieee80211_ht_cap));
+ 		bss_cfg->ht_cap.cap_info = cpu_to_le16(MWIFIEX_DEF_HT_CAP);
+ 		bss_cfg->ht_cap.ampdu_params_info = MWIFIEX_DEF_AMPDU;
+ 	}
+-- 
+2.7.2
+

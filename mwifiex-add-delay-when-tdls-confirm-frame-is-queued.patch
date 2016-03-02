@@ -1,0 +1,43 @@
+From de651ce3d750c19a7b8b7cef22407ecc496619f4 Mon Sep 17 00:00:00 2001
+From: Xinming Hu <huxm@marvell.com>
+Date: Tue, 23 Feb 2016 05:16:16 -0800
+Subject: [PATCH 2/8] mwifiex: add delay when tdls confirm frame is queued
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It is observed that driver may send the data packet to tdls peer
+before tdls peer receives tdls setup confirm frame.
+Similar race condition exists during tdls teardown procedure also.
+This patch adds 10 milliseconds delay to resolve the race.
+
+Signed-off-by: Xinming Hu <huxm@marvell.com>
+Signed-off-by: Cathy Luo <cluo@marvell.com>
+Signed-off-by: Amitkumar Karwar <akarwar@marvell.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Jason Kölker <jason@koelker.net>
+---
+ drivers/net/wireless/marvell/mwifiex/tdls.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/tdls.c b/drivers/net/wireless/marvell/mwifiex/tdls.c
+index 9275f9c..1506496 100644
+--- a/drivers/net/wireless/marvell/mwifiex/tdls.c
++++ b/drivers/net/wireless/marvell/mwifiex/tdls.c
+@@ -680,6 +680,13 @@ int mwifiex_send_tdls_data_frame(struct mwifiex_private *priv, const u8 *peer,
+ 	__net_timestamp(skb);
+ 	mwifiex_queue_tx_pkt(priv, skb);
+ 
++	/* Delay 10ms to make sure tdls setup confirm/teardown frame
++	 * is received by peer
++	*/
++	if (action_code == WLAN_TDLS_SETUP_CONFIRM ||
++	    action_code == WLAN_TDLS_TEARDOWN)
++		msleep_interruptible(10);
++
+ 	return 0;
+ }
+ 
+-- 
+2.7.2
+

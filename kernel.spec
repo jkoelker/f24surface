@@ -24,7 +24,7 @@ Summary: The Linux kernel
 %global zipsed -e 's/\.ko$/\.ko.xz/'
 %endif
 
-# define buildid .local
+%define buildid .surface
 
 # baserelease defines which build revision of this kernel version we're
 # building.  We used to call this fedora_build, but the magical name
@@ -656,6 +656,43 @@ Patch677: digi_acceleport-do-sanity-checking-for-the-number-of.patch
 Patch678: ims-pcu-sanity-check-against-missing-interfaces.patch
 
 # END OF PATCH DEFINITIONS
+
+# Surface Patches
+Patch8000: surface-cam.patch
+Patch8001: surface-touchpad.patch
+
+# Backport mwifiex changes from linux-next
+Patch8100: mwifiex-firmware-download-enhancements.patch
+Patch8101: mwifiex-fix-IBSS-data-path-issue.patch
+Patch8102: mwifiex-add-debugfs-file-to-read-chip-information.patch
+Patch8103: mwifiex-enable-pcie-MSIx-interrupt-mode-support.patch
+Patch8104: mwifiex-fix-power-state-out-of-sync-problem.patch
+Patch8105: mwifiex-add-schedule-scan-support.patch
+Patch8106: mwifiex-add-wowlan-info-messages.patch
+Patch8107: mwifiex-add-wowlan-net-detect-support.patch
+Patch8108: mwifiex-report-wakeup-reason-to-cfg80211.patch
+Patch8109: mwifiex-add-RSSI-support-for-net-detect.patch
+Patch8110: mwifiex-use-SYNC-flag-for-canceling-host-sleep.patch
+Patch8111: mwifiex-fix-bandwidth-display-problem.patch
+Patch8112: mwifiex-fix-a-reversed-condition.patch
+Patch8113: mwifiex-display-right-transmit-packet-delay.patch
+Patch8114: mwifiex-process-pcie-io-memory-read-failure-case.patch
+Patch8115: mwifiex-skip-firmware-dump-when-read_regs-fails.patch
+Patch8116: mwifiex-keep-original-structure-in-decl-header-file.patch
+Patch8117: mwifiex-use-an-extensible-framework-for-firmware-dum.patch
+Patch8118: mwifiex-dynamically-increase-preallocated-firmware-d.patch
+Patch8119: mwifiex-increase-the-priority-of-firmware-dump-messa.patch
+Patch8120: mwifiex-firmware-dump-support-for-w8997-chipset.patch
+Patch8121: mwifiex-fix-an-indenting-mistake.patch
+Patch8122: mwifiex-Use-to_delayed_work.patch
+Patch8123: mwifiex-add-delay-when-tdls-confirm-frame-is-queued.patch
+Patch8124: mwifiex-fix-corner-case-association-failure.patch
+Patch8125: mwifiex-add-sdio-multiport-aggregation-debug-informa.patch
+Patch8126: mwifiex-do-not-set-multiport-flag-for-tx-rx-single-p.patch
+Patch8127: mwifiex-Fixed-incorrect-indentation-issue.patch
+Patch8128: mwifiex-Removed-extra-spaces-before-commas.patch
+Patch8129: mwifiex-Added-missing-spaces-around-brackets.patch
+Patch8130: mwifiex-Empty-Tx-queue-during-suspend.patch
 
 %endif
 
