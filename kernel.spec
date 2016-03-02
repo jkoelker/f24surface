@@ -24,7 +24,7 @@ Summary: The Linux kernel
 %global zipsed -e 's/\.ko$/\.ko.xz/'
 %endif
 
-# define buildid .local
+%define buildid .surface
 
 # baserelease defines which build revision of this kernel version we're
 # building.  We used to call this fedora_build, but the magical name
@@ -623,6 +623,9 @@ Patch849: 0001-iio-Use-event-header-from-kernel-tree.patch
 Patch850: arcmsr-buffer-overflow-in-archmsr_iop_message_xfer.patch
 
 # END OF PATCH DEFINITIONS
+
+# Surface Book Patches
+Patch8000: HID-microsoft-Add-Surface-Book.patch
 
 %endif
 
